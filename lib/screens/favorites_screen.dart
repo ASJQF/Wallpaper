@@ -12,7 +12,7 @@ class FavoritesScreen extends StatefulWidget {
   @override
   State<FavoritesScreen> createState() => _FavoritesScreenState();
 }
-// FavoritesScreen State
+// FavoritesScreen State xxxx 
 class _FavoritesScreenState extends State<FavoritesScreen> {
   late final Future<List<Wallpaper>> _all;
   var _ready = false;
