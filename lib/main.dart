@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
+import 'ads/ad_service.dart';
 import 'l10n/app_localizations.dart';
 import 'screens/splash_screen.dart';
 import 'state/app_controller.dart';
@@ -13,6 +16,7 @@ void main() {
   PaintingBinding.instance.imageCache.maximumSize = 80;
   PaintingBinding.instance.imageCache.maximumSizeBytes = 80 << 20;
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  unawaited(AdService.instance.initialize());
   runApp(const WallpaperApp());
 }
 
@@ -55,6 +59,7 @@ class AuraApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
+      navigatorObservers: [adRouteObserver],
       builder: (context, child) {
         return AnnotatedRegion<SystemUiOverlayStyle>(
           value: SystemUiOverlayStyle(

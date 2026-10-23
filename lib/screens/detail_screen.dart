@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../ads/ad_service.dart';
+import '../ads/banner_ad_view.dart';
 import '../l10n/app_localizations.dart';
 import '../models/wallpaper.dart';
 import '../navigation/routes.dart';
@@ -64,9 +66,9 @@ class _DetailScreenState extends State<DetailScreen> {
     }
     if (mounted) setState(() {});
     try {
-      final items = await context
-          .read<AppController>()
-          .relatedWallpapers(wallpaper.id);
+      final items = await context.read<AppController>().relatedWallpapers(
+        wallpaper.id,
+      );
       if (!mounted) return;
       setState(() => _related[wallpaper.id] = items);
     } catch (_) {
@@ -96,187 +98,208 @@ class _DetailScreenState extends State<DetailScreen> {
         systemNavigationBarContrastEnforced: false,
       ),
       child: Scaffold(
-      backgroundColor: Colors.black,
-      body: CustomScrollView(
-        physics: _zoomed
-            ? const NeverScrollableScrollPhysics()
-            : const BouncingScrollPhysics(),
-        slivers: [
-          SliverToBoxAdapter(
-            child: SizedBox(
-              height: screen.height,
-              width: screen.width,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  PageView.builder(
-                    controller: _pages,
-                    itemCount: widget.feed.length,
-                    physics: _zoomed
-                        ? const NeverScrollableScrollPhysics()
-                        : const PageScrollPhysics(),
-                    onPageChanged: (index) {
-                      setState(() => _index = index);
-                      final item = widget.feed[index];
-                      context.read<AppController>().openWallpaper(item);
-                      _loadRelated(item);
-                    },
-                    itemBuilder: (context, index) {
-                      final item = widget.feed[index];
-                      return GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () =>
-                            setState(() => _showChrome = !_showChrome),
-                        child: _ZoomableImage(
-                          wallpaper: item,
-                          heroTag: index == widget.initialIndex
-                              ? widget.heroTag
-                              : null,
-                          onZoomChanged: (zoomed) {
-                            if (_zoomed == zoomed) return;
-                            setState(() => _zoomed = zoomed);
-                          },
-                        ),
-                      );
-                    },
-                  ),
-                  if (_showChrome) ...[
-                    const IgnorePointer(
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [Color(0x66000000), Color(0x00000000)],
-                            stops: [0, 0.22],
-                          ),
-                        ),
-                      ),
-                    ),
-                    PositionedDirectional(
-                      top: MediaQuery.paddingOf(context).top + 8,
-                      start: 12,
-                      child: _OverlayButton(
-                        icon: Icons.arrow_back_rounded,
-                        tooltip: l10n.back,
-                        onTap: () => Navigator.of(context).maybePop(),
-                      ),
-                    ),
-                    PositionedDirectional(
-                      top: MediaQuery.paddingOf(context).top + 18,
-                      end: 16,
-                      child: Text(
-                        l10n.position(_index + 1, widget.feed.length),
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      left: 12,
-                      right: 12,
-                      bottom: MediaQuery.paddingOf(context).bottom + 12,
-                      child: AuraGlass(
-                        width: double.infinity,
-                        height: 76,
-                        borderRadius: 26,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
-                          child: Row(
-                            children: [
-                              _FavoriteAction(wallpaperId: wallpaper.id),
-                              const SizedBox(width: 6),
-                              _BarButton(
-                                tooltip: l10n.share,
-                                onTap: () => showShareSheet(context, wallpaper),
-                                child: const Icon(
-                                  Icons.share_rounded,
-                                  color: Colors.white,
+        backgroundColor: Colors.black,
+        body: CustomScrollView(
+          physics: _zoomed
+              ? const NeverScrollableScrollPhysics()
+              : const BouncingScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(
+              child: SizedBox(
+                height: screen.height,
+                width: screen.width,
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          PageView.builder(
+                            controller: _pages,
+                            itemCount: widget.feed.length,
+                            physics: _zoomed
+                                ? const NeverScrollableScrollPhysics()
+                                : const PageScrollPhysics(),
+                            onPageChanged: (index) {
+                              setState(() => _index = index);
+                              final item = widget.feed[index];
+                              context.read<AppController>().openWallpaper(item);
+                              _loadRelated(item);
+                            },
+                            itemBuilder: (context, index) {
+                              final item = widget.feed[index];
+                              return GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () =>
+                                    setState(() => _showChrome = !_showChrome),
+                                child: _ZoomableImage(
+                                  wallpaper: item,
+                                  heroTag: index == widget.initialIndex
+                                      ? widget.heroTag
+                                      : null,
+                                  onZoomChanged: (zoomed) {
+                                    if (_zoomed == zoomed) return;
+                                    setState(() => _zoomed = zoomed);
+                                  },
                                 ),
-                              ),
-                              const SizedBox(width: 6),
-                              _BarButton(
-                                tooltip: l10n.info,
-                                onTap: () => showInfoSheet(
-                                  context,
-                                  wallpaper,
-                                  onOpen: (item) => openWallpaper(
-                                    context,
-                                    item,
-                                    'info-${item.id}',
+                              );
+                            },
+                          ),
+                          if (_showChrome) ...[
+                            const IgnorePointer(
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      Color(0x66000000),
+                                      Color(0x00000000),
+                                    ],
+                                    stops: [0, 0.22],
                                   ),
                                 ),
-                                child: const Icon(
-                                  Icons.info_outline_rounded,
-                                  color: Colors.white,
+                              ),
+                            ),
+                            PositionedDirectional(
+                              top: MediaQuery.paddingOf(context).top + 8,
+                              start: 12,
+                              child: _OverlayButton(
+                                icon: Icons.arrow_back_rounded,
+                                tooltip: l10n.back,
+                                onTap: () => Navigator.of(context).maybePop(),
+                              ),
+                            ),
+                            PositionedDirectional(
+                              top: MediaQuery.paddingOf(context).top + 18,
+                              end: 16,
+                              child: Text(
+                                l10n.position(_index + 1, widget.feed.length),
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: _DownloadButton(
-                                  wallpaperId: wallpaper.id,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
+                    if (_showChrome)
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: AuraGlass(
+                              width: double.infinity,
+                              height: 76,
+                              borderRadius: 26,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                ),
+                                child: Row(
+                                  children: [
+                                    _FavoriteAction(wallpaperId: wallpaper.id),
+                                    const SizedBox(width: 6),
+                                    _BarButton(
+                                      tooltip: l10n.share,
+                                      onTap: () =>
+                                          showShareSheet(context, wallpaper),
+                                      child: const Icon(
+                                        Icons.share_rounded,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    _BarButton(
+                                      tooltip: l10n.info,
+                                      onTap: () => showInfoSheet(
+                                        context,
+                                        wallpaper,
+                                        onOpen: (item) => openWallpaper(
+                                          context,
+                                          item,
+                                          'info-${item.id}',
+                                        ),
+                                      ),
+                                      child: const Icon(
+                                        Icons.info_outline_rounded,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: _DownloadButton(
+                                        wallpaperId: wallpaper.id,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const BannerAdView(background: Colors.black),
+                          SizedBox(
+                            height: MediaQuery.paddingOf(context).bottom,
+                          ),
+                        ],
+                      ),
                   ],
-                ],
-              ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 18, 16, 10),
-              child: Text(
-                l10n.relatedWallpapers,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
                 ),
               ),
             ),
-          ),
-          if (loading)
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.fromLTRB(16, 18, 16, 10),
                 child: Text(
-                  l10n.loadingRelated,
-                  style: const TextStyle(color: Colors.white54),
-                ),
-              ),
-            )
-          else if (related == null || related.isEmpty)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-                child: Text(
-                  l10n.noRelated,
-                  style: const TextStyle(color: Colors.white54),
-                ),
-              ),
-            )
-          else
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 32),
-              sliver: SliverToBoxAdapter(
-                child: _RelatedMasonry(
-                  items: related,
-                  onOpen: (item) => openWallpaper(
-                    context,
-                    item,
-                    'related-${item.id}',
-                    feed: related,
+                  l10n.relatedWallpapers,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ),
             ),
-        ],
-      ),
+            if (loading)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text(
+                    l10n.loadingRelated,
+                    style: const TextStyle(color: Colors.white54),
+                  ),
+                ),
+              )
+            else if (related == null || related.isEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+                  child: Text(
+                    l10n.noRelated,
+                    style: const TextStyle(color: Colors.white54),
+                  ),
+                ),
+              )
+            else
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 32),
+                sliver: SliverToBoxAdapter(
+                  child: _RelatedMasonry(
+                    items: related,
+                    onOpen: (item) => openWallpaper(
+                      context,
+                      item,
+                      'related-${item.id}',
+                      feed: related,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -298,7 +321,9 @@ class _RelatedMasonry extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(child: Column(children: [for (final item in left) _tile(item)])),
+        Expanded(
+          child: Column(children: [for (final item in left) _tile(item)]),
+        ),
         const SizedBox(width: 10),
         Expanded(
           child: Column(children: [for (final item in right) _tile(item)]),
@@ -371,19 +396,24 @@ class _ZoomableImageState extends State<_ZoomableImage> {
       url: widget.wallpaper.previewUrl.isNotEmpty
           ? widget.wallpaper.previewUrl
           : widget.wallpaper.imageUrl,
-      cacheWidth: 1200,
+      fit: BoxFit.contain,
+      cacheWidth: 1600,
     );
-    return InteractiveViewer(
-      transformationController: _transform,
-      panEnabled: zoomed,
-      minScale: 1,
-      maxScale: 4,
-      child: widget.heroTag == null
-          ? image
-          : Hero(
-              tag: widget.heroTag!,
-              child: Material(type: MaterialType.transparency, child: image),
-            ),
+    return ColoredBox(
+      color: Colors.black,
+      child: InteractiveViewer(
+        transformationController: _transform,
+        alignment: Alignment.center,
+        panEnabled: zoomed,
+        minScale: 1,
+        maxScale: 4,
+        child: widget.heroTag == null
+            ? image
+            : Hero(
+                tag: widget.heroTag!,
+                child: Material(type: MaterialType.transparency, child: image),
+              ),
+      ),
     );
   }
 }
@@ -503,9 +533,11 @@ class _DownloadButton extends StatelessWidget {
         onTap: busy
             ? null
             : () async {
+                final adClosed = AdService.instance.showForDownload();
                 final result = await context.read<AppController>().download(
                   wallpaperId,
                 );
+                await adClosed;
                 if (!context.mounted || result == DownloadResult.busy) return;
                 final message = switch (result) {
                   DownloadResult.saved => l10n.downloadSaved,
@@ -521,7 +553,11 @@ class _DownloadButton extends StatelessWidget {
                   DownloadResult.busy => '',
                 };
                 if (message.isEmpty || !context.mounted) return;
-                showAppMessage(context, message, bottom: 120);
+                showAppMessage(
+                  context,
+                  message,
+                  bottom: MediaQuery.paddingOf(context).bottom + 200,
+                );
               },
         child: Ink(
           height: 48,
@@ -555,9 +591,7 @@ class _DownloadButton extends StatelessWidget {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          busy
-                              ? '${(progress * 100).round()}%'
-                              : l10n.download,
+                          busy ? '${(progress * 100).round()}%' : l10n.download,
                           style: Theme.of(context).textTheme.titleSmall
                               ?.copyWith(
                                 color: Colors.white,

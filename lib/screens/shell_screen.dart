@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../ads/banner_ad_view.dart';
 import '../l10n/app_localizations.dart';
 import '../state/app_controller.dart';
 import 'explore_screen.dart';
@@ -15,6 +16,13 @@ class ShellScreen extends StatefulWidget {
 }
 
 class _ShellScreenState extends State<ShellScreen> with WidgetsBindingObserver {
+  var _bannerHeight = 0.0;
+
+  void _setBannerHeight(double height) {
+    if (!mounted || _bannerHeight == height) return;
+    setState(() => _bannerHeight = height);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -50,56 +58,78 @@ class _ShellScreenState extends State<ShellScreen> with WidgetsBindingObserver {
       extendBody: true,
       body: SafeArea(
         bottom: false,
-        child: IndexedStack(
-          index: nav.index,
-          children: const [HomeScreen(), ExploreScreen(), FavoritesScreen()],
+        child: Builder(
+          builder: (context) {
+            final media = MediaQuery.of(context);
+            return MediaQuery(
+              data: media.copyWith(
+                padding: media.padding.copyWith(
+                  bottom: media.padding.bottom + _bannerHeight,
+                ),
+              ),
+              child: IndexedStack(
+                index: nav.index,
+                children: const [
+                  HomeScreen(),
+                  ExploreScreen(),
+                  FavoritesScreen(),
+                ],
+              ),
+            );
+          },
         ),
       ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-        child: SafeArea(
-          top: false,
-          child: Material(
-            color: scheme.surface,
-            elevation: 12,
-            shadowColor: Colors.black.withValues(alpha: 0.35),
-            surfaceTintColor: Colors.transparent,
-            clipBehavior: Clip.antiAlias,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(26),
-              side: BorderSide(color: scheme.outline),
-            ),
-            child: NavigationBar(
-              selectedIndex: nav.index,
-              onDestinationSelected: context.read<AppController>().setNav,
-              destinations: [
-                NavigationDestination(
-                  icon: const Icon(Icons.home_outlined),
-                  selectedIcon: const Icon(Icons.home_rounded),
-                  label: AppLocalizations.of(context).home,
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          BannerAdView(onHeight: _setBannerHeight),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: SafeArea(
+              top: false,
+              child: Material(
+                color: scheme.surface,
+                elevation: 12,
+                shadowColor: Colors.black.withValues(alpha: 0.35),
+                surfaceTintColor: Colors.transparent,
+                clipBehavior: Clip.antiAlias,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(26),
+                  side: BorderSide(color: scheme.outline),
                 ),
-                NavigationDestination(
-                  icon: const Icon(Icons.explore_outlined),
-                  selectedIcon: const Icon(Icons.explore_rounded),
-                  label: AppLocalizations.of(context).explore,
+                child: NavigationBar(
+                  selectedIndex: nav.index,
+                  onDestinationSelected: context.read<AppController>().setNav,
+                  destinations: [
+                    NavigationDestination(
+                      icon: const Icon(Icons.home_outlined),
+                      selectedIcon: const Icon(Icons.home_rounded),
+                      label: AppLocalizations.of(context).home,
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.explore_outlined),
+                      selectedIcon: const Icon(Icons.explore_rounded),
+                      label: AppLocalizations.of(context).explore,
+                    ),
+                    NavigationDestination(
+                      icon: Badge(
+                        isLabelVisible: nav.saved > 0,
+                        label: Text('${nav.saved}'),
+                        child: const Icon(Icons.bookmark_border_rounded),
+                      ),
+                      selectedIcon: Badge(
+                        isLabelVisible: nav.saved > 0,
+                        label: Text('${nav.saved}'),
+                        child: const Icon(Icons.bookmark_rounded),
+                      ),
+                      label: AppLocalizations.of(context).favorites,
+                    ),
+                  ],
                 ),
-                NavigationDestination(
-                  icon: Badge(
-                    isLabelVisible: nav.saved > 0,
-                    label: Text('${nav.saved}'),
-                    child: const Icon(Icons.bookmark_border_rounded),
-                  ),
-                  selectedIcon: Badge(
-                    isLabelVisible: nav.saved > 0,
-                    label: Text('${nav.saved}'),
-                    child: const Icon(Icons.bookmark_rounded),
-                  ),
-                  label: AppLocalizations.of(context).favorites,
-                ),
-              ],
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }

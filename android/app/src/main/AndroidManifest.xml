@@ -4,6 +4,9 @@
         android:label="أورا"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-2119321376671262~7906090260"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"
